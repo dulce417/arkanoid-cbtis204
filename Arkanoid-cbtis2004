@@ -1,0 +1,350 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arkanoid CBTis 204</title>
+
+<style>
+
+body{
+margin:0;
+background:linear-gradient(135deg,#001f3f,#0074D9);
+font-family:Arial,sans-serif;
+text-align:center;
+color:white;
+}
+
+h1{
+margin-top:15px;
+}
+
+#info{
+display:flex;
+justify-content:center;
+gap:30px;
+font-size:22px;
+margin-bottom:10px;
+}
+
+canvas{
+background:#000;
+border:4px solid #00c3ff;
+border-radius:15px;
+box-shadow:0 0 20px #00c3ff;
+}
+
+button{
+margin-top:15px;
+padding:10px 20px;
+font-size:18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+background:#00c3ff;
+color:white;
+}
+
+#mensaje{
+font-size:30px;
+font-weight:bold;
+margin-top:15px;
+color:yellow;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🎮 ARKANOID CBTis 204 🎮</h1>
+
+<div id="info">
+<div>🏆 Puntos: <span id="score">0</span></div>
+<div>❤️ Vidas: <span id="vidas">3</span></div>
+<div>🚀 Nivel: <span id="nivel">1</span></div>
+</div>
+
+<canvas id="canvas" width="800" height="500"></canvas>
+
+<div id="mensaje"></div>
+
+<button onclick="reiniciar()">
+🔄 Reiniciar Juego
+</button>
+
+<script>
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+let score=0;
+let vidas=3;
+let nivel=1;
+
+const paddle={
+x:350,
+y:470,
+w:120,
+h:15,
+speed:8
+};
+
+const ball={
+x:400,
+y:250,
+r:10,
+dx:4,
+dy:-4
+};
+
+let rightPressed=false;
+let leftPressed=false;
+
+let bricks=[];
+
+function crearLadrillos(){
+
+bricks=[];
+
+for(let r=0;r<5;r++){
+
+for(let c=0;c<10;c++){
+
+bricks.push({
+x:20+c*76,
+y:40+r*35,
+w:70,
+h:25,
+visible:true
+});
+
+}
+
+}
+
+}
+
+crearLadrillos();
+
+document.addEventListener("keydown",(e)=>{
+
+if(e.key==="ArrowRight")
+rightPressed=true;
+
+if(e.key==="ArrowLeft")
+leftPressed=true;
+
+});
+
+document.addEventListener("keyup",(e)=>{
+
+if(e.key==="ArrowRight")
+rightPressed=false;
+
+if(e.key==="ArrowLeft")
+leftPressed=false;
+
+});
+
+function dibujarPelota(){
+
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ctx.fillStyle="white";
+ctx.fill();
+
+}
+
+function dibujarBarra(){
+
+ctx.fillStyle="#00c3ff";
+ctx.fillRect(
+paddle.x,
+paddle.y,
+paddle.w,
+paddle.h
+);
+
+}
+
+function dibujarLadrillos(){
+
+bricks.forEach((b)=>{
+
+if(b.visible){
+
+ctx.fillStyle=
+`hsl(${(b.x+b.y)%360},80%,60%)`;
+
+ctx.fillRect(
+b.x,
+b.y,
+b.w,
+b.h
+);
+
+}
+
+});
+
+}
+
+function moverBarra(){
+
+if(rightPressed &&
+paddle.x<canvas.width-paddle.w){
+
+paddle.x+=paddle.speed;
+
+}
+
+if(leftPressed &&
+paddle.x>0){
+
+paddle.x-=paddle.speed;
+
+}
+
+}
+
+function moverPelota(){
+
+ball.x+=ball.dx;
+ball.y+=ball.dy;
+
+if(ball.x+ball.r>canvas.width ||
+ball.x-ball.r<0){
+
+ball.dx*=-1;
+
+}
+
+if(ball.y-ball.r<0){
+
+ball.dy*=-1;
+
+}
+
+if(ball.y+ball.r>canvas.height){
+
+vidas--;
+
+document.getElementById("vidas").textContent=vidas;
+
+ball.x=400;
+ball.y=250;
+
+if(vidas<=0){
+
+document.getElementById("mensaje")
+.innerHTML="💀 GAME OVER";
+
+cancelAnimationFrame(animacion);
+
+}
+
+}
+
+if(
+ball.x>paddle.x &&
+ball.x<paddle.x+paddle.w &&
+ball.y+ball.r>paddle.y
+){
+
+ball.dy=-Math.abs(ball.dy);
+
+}
+
+}
+
+function colisiones(){
+
+bricks.forEach((b)=>{
+
+if(
+b.visible &&
+ball.x>b.x &&
+ball.x<b.x+b.w &&
+ball.y>b.y &&
+ball.y<b.y+b.h
+){
+
+b.visible=false;
+
+ball.dy*=-1;
+
+score+=10;
+
+document.getElementById("score")
+.textContent=score;
+
+}
+
+});
+
+if(bricks.every(b=>!b.visible)){
+
+nivel++;
+
+document.getElementById("nivel")
+.textContent=nivel;
+
+crearLadrillos();
+
+ball.dx+=1;
+ball.dy-=1;
+
+document.getElementById("mensaje")
+.innerHTML="🚀 NIVEL "+nivel;
+
+setTimeout(()=>{
+
+document.getElementById("mensaje")
+.innerHTML="";
+
+},2000);
+
+}
+
+}
+
+let animacion;
+
+function actualizar(){
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+dibujarPelota();
+dibujarBarra();
+dibujarLadrillos();
+
+moverBarra();
+moverPelota();
+colisiones();
+
+animacion=requestAnimationFrame(
+actualizar
+);
+
+}
+
+actualizar();
+
+function reiniciar(){
+
+location.reload();
+
+}
+
+</script>
+
+</body>
+</html>
+```
