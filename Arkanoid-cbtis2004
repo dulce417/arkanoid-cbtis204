@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,344 +6,273 @@
 <title>Arkanoid CBTis 204</title>
 
 <style>
-
 body{
-margin:0;
-background:linear-gradient(135deg,#001f3f,#0074D9);
-font-family:Arial,sans-serif;
-text-align:center;
-color:white;
+    margin:0;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    color:white;
+    font-family:Arial,sans-serif;
+    text-align:center;
 }
 
-h1{
-margin-top:15px;
-}
-
-#info{
-display:flex;
-justify-content:center;
-gap:30px;
-font-size:22px;
-margin-bottom:10px;
+header{
+    background:#2563eb;
+    padding:20px;
 }
 
 canvas{
-background:#000;
-border:4px solid #00c3ff;
-border-radius:15px;
-box-shadow:0 0 20px #00c3ff;
+    background:#111827;
+    border:4px solid white;
+    margin-top:20px;
+    border-radius:10px;
+}
+
+#info{
+    font-size:22px;
+    margin-top:10px;
 }
 
 button{
-margin-top:15px;
-padding:10px 20px;
-font-size:18px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-background:#00c3ff;
-color:white;
+    padding:12px 25px;
+    font-size:18px;
+    border:none;
+    border-radius:8px;
+    background:#22c55e;
+    color:white;
+    cursor:pointer;
 }
 
-#mensaje{
-font-size:30px;
-font-weight:bold;
-margin-top:15px;
-color:yellow;
+button:hover{
+    background:#16a34a;
 }
-
 </style>
 </head>
 
 <body>
 
-<h1>🎮 ARKANOID CBTis 204 🎮</h1>
+<header>
+<h1>🎮 ARKANOID CBTis 204</h1>
+<p>Proyecto Final</p>
+</header>
 
 <div id="info">
-<div>🏆 Puntos: <span id="score">0</span></div>
-<div>❤️ Vidas: <span id="vidas">3</span></div>
-<div>🚀 Nivel: <span id="nivel">1</span></div>
+Puntos: <span id="score">0</span>
 </div>
 
-<canvas id="canvas" width="800" height="500"></canvas>
+<button onclick="iniciarJuego()">Iniciar Juego</button>
 
-<div id="mensaje"></div>
+<br>
 
-<button onclick="reiniciar()">
-🔄 Reiniciar Juego
-</button>
+<canvas id="gameCanvas" width="900" height="500"></canvas>
 
 <script>
 
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-let score=0;
-let vidas=3;
-let nivel=1;
+let score = 0;
 
-const paddle={
-x:350,
-y:470,
-w:120,
-h:15,
-speed:8
+let paddle = {
+    x: 400,
+    y: 470,
+    width: 120,
+    height: 15,
+    speed: 8
 };
 
-const ball={
-x:400,
-y:250,
-r:10,
-dx:4,
-dy:-4
+let ball = {
+    x: 450,
+    y: 250,
+    radius: 10,
+    dx: 4,
+    dy: -4
 };
 
-let rightPressed=false;
-let leftPressed=false;
+let rightPressed = false;
+let leftPressed = false;
 
-let bricks=[];
+const brickRowCount = 5;
+const brickColumnCount = 10;
+const brickWidth = 75;
+const brickHeight = 25;
+const brickPadding = 10;
+const brickOffsetTop = 50;
+const brickOffsetLeft = 30;
 
-function crearLadrillos(){
+let bricks = [];
 
-bricks=[];
+for(let c=0;c<brickColumnCount;c++){
+    bricks[c]=[];
+    for(let r=0;r<brickRowCount;r++){
+        bricks[c][r]={x:0,y:0,status:1};
+    }
+}
 
-for(let r=0;r<5;r++){
+document.addEventListener("keydown", keyDownHandler);
+document.addEventListener("keyup", keyUpHandler);
 
-for(let c=0;c<10;c++){
+function keyDownHandler(e){
+    if(e.key=="Right" || e.key=="ArrowRight"){
+        rightPressed=true;
+    }
+    else if(e.key=="Left" || e.key=="ArrowLeft"){
+        leftPressed=true;
+    }
+}
 
-bricks.push({
-x:20+c*76,
-y:40+r*35,
-w:70,
-h:25,
-visible:true
-});
+function keyUpHandler(e){
+    if(e.key=="Right" || e.key=="ArrowRight"){
+        rightPressed=false;
+    }
+    else if(e.key=="Left" || e.key=="ArrowLeft"){
+        leftPressed=false;
+    }
+}
+
+function drawBall(){
+    ctx.beginPath();
+    ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI*2);
+    ctx.fillStyle="#facc15";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawPaddle(){
+    ctx.beginPath();
+    ctx.rect(
+        paddle.x,
+        paddle.y,
+        paddle.width,
+        paddle.height
+    );
+    ctx.fillStyle="#22c55e";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawBricks(){
+    for(let c=0;c<brickColumnCount;c++){
+        for(let r=0;r<brickRowCount;r++){
+
+            if(bricks[c][r].status==1){
+
+                let brickX=
+                c*(brickWidth+brickPadding)+brickOffsetLeft;
+
+                let brickY=
+                r*(brickHeight+brickPadding)+brickOffsetTop;
+
+                bricks[c][r].x=brickX;
+                bricks[c][r].y=brickY;
+
+                ctx.beginPath();
+                ctx.rect(
+                    brickX,
+                    brickY,
+                    brickWidth,
+                    brickHeight
+                );
+
+                ctx.fillStyle=
+                `hsl(${c*30},80%,50%)`;
+
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+    }
+}
+
+function collisionDetection(){
+
+for(let c=0;c<brickColumnCount;c++){
+for(let r=0;r<brickRowCount;r++){
+
+let b=bricks[c][r];
+
+if(b.status==1){
+
+if(
+ball.x>b.x &&
+ball.x<b.x+brickWidth &&
+ball.y>b.y &&
+ball.y<b.y+brickHeight
+){
+
+ball.dy=-ball.dy;
+b.status=0;
+score++;
+
+document.getElementById("score").textContent=score;
+
+if(score==brickRowCount*brickColumnCount){
+
+alert("🏆 ¡GANASTE!");
+document.location.reload();
 
 }
 
 }
-
+}
+}
+}
 }
 
-crearLadrillos();
+function draw(){
 
-document.addEventListener("keydown",(e)=>{
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-if(e.key==="ArrowRight")
-rightPressed=true;
+drawBricks();
+drawBall();
+drawPaddle();
+collisionDetection();
 
-if(e.key==="ArrowLeft")
-leftPressed=true;
-
-});
-
-document.addEventListener("keyup",(e)=>{
-
-if(e.key==="ArrowRight")
-rightPressed=false;
-
-if(e.key==="ArrowLeft")
-leftPressed=false;
-
-});
-
-function dibujarPelota(){
-
-ctx.beginPath();
-ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-ctx.fillStyle="white";
-ctx.fill();
-
+if(ball.x+ball.dx>canvas.width-ball.radius ||
+ball.x+ball.dx<ball.radius){
+ball.dx=-ball.dx;
 }
 
-function dibujarBarra(){
-
-ctx.fillStyle="#00c3ff";
-ctx.fillRect(
-paddle.x,
-paddle.y,
-paddle.w,
-paddle.h
-);
-
+if(ball.y+ball.dy<ball.radius){
+ball.dy=-ball.dy;
 }
+else if(ball.y+ball.dy>canvas.height-ball.radius){
 
-function dibujarLadrillos(){
+if(ball.x>paddle.x &&
+ball.x<paddle.x+paddle.width){
 
-bricks.forEach((b)=>{
+ball.dy=-ball.dy;
 
-if(b.visible){
+}else{
 
-ctx.fillStyle=
-`hsl(${(b.x+b.y)%360},80%,60%)`;
-
-ctx.fillRect(
-b.x,
-b.y,
-b.w,
-b.h
-);
-
+alert("💀 GAME OVER");
+document.location.reload();
 }
-
-});
-
 }
-
-function moverBarra(){
 
 if(rightPressed &&
-paddle.x<canvas.width-paddle.w){
-
+paddle.x<canvas.width-paddle.width){
 paddle.x+=paddle.speed;
-
 }
 
 if(leftPressed &&
 paddle.x>0){
-
 paddle.x-=paddle.speed;
-
 }
-
-}
-
-function moverPelota(){
 
 ball.x+=ball.dx;
 ball.y+=ball.dy;
 
-if(ball.x+ball.r>canvas.width ||
-ball.x-ball.r<0){
-
-ball.dx*=-1;
+requestAnimationFrame(draw);
 
 }
 
-if(ball.y-ball.r<0){
-
-ball.dy*=-1;
-
-}
-
-if(ball.y+ball.r>canvas.height){
-
-vidas--;
-
-document.getElementById("vidas").textContent=vidas;
-
-ball.x=400;
-ball.y=250;
-
-if(vidas<=0){
-
-document.getElementById("mensaje")
-.innerHTML="💀 GAME OVER";
-
-cancelAnimationFrame(animacion);
-
-}
-
-}
-
-if(
-ball.x>paddle.x &&
-ball.x<paddle.x+paddle.w &&
-ball.y+ball.r>paddle.y
-){
-
-ball.dy=-Math.abs(ball.dy);
-
-}
-
-}
-
-function colisiones(){
-
-bricks.forEach((b)=>{
-
-if(
-b.visible &&
-ball.x>b.x &&
-ball.x<b.x+b.w &&
-ball.y>b.y &&
-ball.y<b.y+b.h
-){
-
-b.visible=false;
-
-ball.dy*=-1;
-
-score+=10;
-
-document.getElementById("score")
-.textContent=score;
-
-}
-
-});
-
-if(bricks.every(b=>!b.visible)){
-
-nivel++;
-
-document.getElementById("nivel")
-.textContent=nivel;
-
-crearLadrillos();
-
-ball.dx+=1;
-ball.dy-=1;
-
-document.getElementById("mensaje")
-.innerHTML="🚀 NIVEL "+nivel;
-
-setTimeout(()=>{
-
-document.getElementById("mensaje")
-.innerHTML="";
-
-},2000);
-
-}
-
-}
-
-let animacion;
-
-function actualizar(){
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-dibujarPelota();
-dibujarBarra();
-dibujarLadrillos();
-
-moverBarra();
-moverPelota();
-colisiones();
-
-animacion=requestAnimationFrame(
-actualizar
-);
-
-}
-
-actualizar();
-
-function reiniciar(){
-
-location.reload();
-
+function iniciarJuego(){
+draw();
 }
 
 </script>
 
 </body>
 </html>
-```
+
+
+
