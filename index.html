@@ -2,191 +2,104 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arkanoid</title>
-
+<title>Arkanoid Simple</title>
 <style>
 body{
-    margin:0;
+    background:#111;
     text-align:center;
-    font-family:Arial,sans-serif;
-    background:#0b1020;
     color:white;
+    font-family:Arial;
 }
-
 canvas{
     background:black;
-    border:3px solid white;
-    margin-top:10px;
+    border:2px solid white;
 }
 </style>
 </head>
 <body>
 
-<h1>ARKANOID</h1>
-<p>Puntos: <span id="score">0</span></p>
+<h1>Arkanoid</h1>
 
-<canvas id="canvas" width="800" height="500"></canvas>
+<canvas id="game" width="800" height="500"></canvas>
 
 <script>
 
-const canvas = document.getElementById("canvas");
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let score = 0;
+let ballX = 400;
+let ballY = 250;
+let ballDX = 4;
+let ballDY = -4;
+const ballRadius = 10;
 
-let ball = {
-    x: 400,
-    y: 250,
-    radius: 10,
-    dx: 4,
-    dy: -4
-};
+let paddleX = 340;
+const paddleWidth = 120;
+const paddleHeight = 15;
 
-let paddle = {
-    x: 340,
-    y: 470,
-    width: 120,
-    height: 15
-};
-
-let rightPressed = false;
-let leftPressed = false;
+let right = false;
+let left = false;
 
 document.addEventListener("keydown", e=>{
-    if(e.key==="ArrowRight") rightPressed=true;
-    if(e.key==="ArrowLeft") leftPressed=true;
+    if(e.key==="ArrowRight") right=true;
+    if(e.key==="ArrowLeft") left=true;
 });
 
 document.addEventListener("keyup", e=>{
-    if(e.key==="ArrowRight") rightPressed=false;
-    if(e.key==="ArrowLeft") leftPressed=false;
+    if(e.key==="ArrowRight") right=false;
+    if(e.key==="ArrowLeft") left=false;
 });
-
-const bricks = [];
-
-for(let r=0;r<5;r++){
-    for(let c=0;c<8;c++){
-        bricks.push({
-            x:60+c*85,
-            y:40+r*30,
-            width:70,
-            height:20,
-            visible:true
-        });
-    }
-}
-
-function drawBall(){
-    ctx.beginPath();
-    ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI*2);
-    ctx.fillStyle="white";
-    ctx.fill();
-}
-
-function drawPaddle(){
-    ctx.fillStyle="lime";
-    ctx.fillRect(
-        paddle.x,
-        paddle.y,
-        paddle.width,
-        paddle.height
-    );
-}
-
-function drawBricks(){
-
-    bricks.forEach(brick=>{
-
-        if(brick.visible){
-
-            ctx.fillStyle="orange";
-
-            ctx.fillRect(
-                brick.x,
-                brick.y,
-                brick.width,
-                brick.height
-            );
-        }
-    });
-}
-
-function collisionBricks(){
-
-    bricks.forEach(brick=>{
-
-        if(
-            brick.visible &&
-            ball.x > brick.x &&
-            ball.x < brick.x + brick.width &&
-            ball.y > brick.y &&
-            ball.y < brick.y + brick.height
-        ){
-            brick.visible = false;
-            ball.dy *= -1;
-
-            score++;
-            document.getElementById("score").textContent = score;
-        }
-    });
-}
-
-function update(){
-
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    if(ball.x + ball.radius > canvas.width ||
-       ball.x - ball.radius < 0){
-        ball.dx *= -1;
-    }
-
-    if(ball.y - ball.radius < 0){
-        ball.dy *= -1;
-    }
-
-    if(
-        ball.y + ball.radius >= paddle.y &&
-        ball.x >= paddle.x &&
-        ball.x <= paddle.x + paddle.width
-    ){
-        ball.dy = -Math.abs(ball.dy);
-    }
-
-    if(ball.y > canvas.height){
-        alert("GAME OVER");
-        location.reload();
-    }
-
-    if(rightPressed){
-        paddle.x += 7;
-    }
-
-    if(leftPressed){
-        paddle.x -= 7;
-    }
-
-    if(paddle.x < 0){
-        paddle.x = 0;
-    }
-
-    if(paddle.x + paddle.width > canvas.width){
-        paddle.x = canvas.width - paddle.width;
-    }
-
-    collisionBricks();
-}
 
 function draw(){
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    update();
+    ctx.beginPath();
+    ctx.arc(ballX,ballY,ballRadius,0,Math.PI*2);
+    ctx.fillStyle="white";
+    ctx.fill();
 
-    drawBricks();
-    drawBall();
-    drawPaddle();
+    ctx.fillStyle="lime";
+    ctx.fillRect(
+        paddleX,
+        470,
+        paddleWidth,
+        paddleHeight
+    );
+
+    ballX += ballDX;
+    ballY += ballDY;
+
+    if(ballX > canvas.width-ballRadius || ballX < ballRadius){
+        ballDX = -ballDX;
+    }
+
+    if(ballY < ballRadius){
+        ballDY = -ballDY;
+    }
+
+    if(
+        ballY + ballRadius >= 470 &&
+        ballX >= paddleX &&
+        ballX <= paddleX + paddleWidth
+    ){
+        ballDY = -Math.abs(ballDY);
+    }
+
+    if(ballY > canvas.height){
+        ballX = 400;
+        ballY = 250;
+        ballDX = 4;
+        ballDY = -4;
+    }
+
+    if(right && paddleX < canvas.width-paddleWidth){
+        paddleX += 7;
+    }
+
+    if(left && paddleX > 0){
+        paddleX -= 7;
+    }
 
     requestAnimationFrame(draw);
 }
