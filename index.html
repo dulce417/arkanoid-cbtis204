@@ -2,23 +2,27 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Arkanoid Simple</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arkanoid</title>
+
 <style>
 body{
-    background:#111;
-    text-align:center;
+    background:#0b1020;
     color:white;
-    font-family:Arial;
+    text-align:center;
+    font-family:Arial,sans-serif;
 }
+
 canvas{
     background:black;
-    border:2px solid white;
+    border:3px solid white;
 }
 </style>
 </head>
 <body>
 
-<h1>Arkanoid</h1>
+<h1>ARKANOID</h1>
+<p>Puntos: <span id="score">0</span></p>
 
 <canvas id="game" width="800" height="500"></canvas>
 
@@ -26,6 +30,8 @@ canvas{
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
+let score = 0;
 
 let ballX = 400;
 let ballY = 250;
@@ -36,6 +42,7 @@ const ballRadius = 10;
 let paddleX = 340;
 const paddleWidth = 120;
 const paddleHeight = 15;
+const paddleY = 470;
 
 let right = false;
 let left = false;
@@ -50,9 +57,66 @@ document.addEventListener("keyup", e=>{
     if(e.key==="ArrowLeft") left=false;
 });
 
+const bricks = [];
+
+for(let r=0;r<5;r++){
+    for(let c=0;c<8;c++){
+        bricks.push({
+            x:60 + c*85,
+            y:40 + r*35,
+            width:70,
+            height:20,
+            visible:true
+        });
+    }
+}
+
+function drawBricks(){
+
+    bricks.forEach(brick=>{
+
+        if(brick.visible){
+
+            ctx.fillStyle="orange";
+
+            ctx.fillRect(
+                brick.x,
+                brick.y,
+                brick.width,
+                brick.height
+            );
+        }
+    });
+}
+
+function collisionBricks(){
+
+    bricks.forEach(brick=>{
+
+        if(
+            brick.visible &&
+            ballX > brick.x &&
+            ballX < brick.x + brick.width &&
+            ballY > brick.y &&
+            ballY < brick.y + brick.height
+        ){
+
+            brick.visible = false;
+
+            ballDY = -ballDY;
+
+            score++;
+
+            document.getElementById("score").textContent = score;
+        }
+    });
+}
+
 function draw(){
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawBricks();
 
     ctx.beginPath();
     ctx.arc(ballX,ballY,ballRadius,0,Math.PI*2);
@@ -62,15 +126,18 @@ function draw(){
     ctx.fillStyle="lime";
     ctx.fillRect(
         paddleX,
-        470,
+        paddleY,
         paddleWidth,
         paddleHeight
     );
 
+    collisionBricks();
+
     ballX += ballDX;
     ballY += ballDY;
 
-    if(ballX > canvas.width-ballRadius || ballX < ballRadius){
+    if(ballX > canvas.width-ballRadius ||
+       ballX < ballRadius){
         ballDX = -ballDX;
     }
 
@@ -79,7 +146,8 @@ function draw(){
     }
 
     if(
-        ballY + ballRadius >= 470 &&
+        ballY + ballRadius >= paddleY &&
+        ballY + ballRadius <= paddleY + paddleHeight &&
         ballX >= paddleX &&
         ballX <= paddleX + paddleWidth
     ){
@@ -103,33 +171,11 @@ function draw(){
 
     requestAnimationFrame(draw);
 }
-const bricks = [];
 
-for(let r=0;r<5;r++){
-    for(let c=0;c<8;c++){
-        bricks.push({
-            x:60 + c*85,
-            y:40 + r*30,
-            width:70,
-            height:20
-        });
-    }
-}
-
-function drawBricks(){
-    bricks.forEach(brick=>{
-        ctx.fillStyle = "orange";
-        ctx.fillRect(
-            brick.x,
-            brick.y,
-            brick.width,
-            brick.height
-        );
-    });
-}
 draw();
 
 </script>
 
 </body>
 </html>
+
